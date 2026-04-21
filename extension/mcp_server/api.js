@@ -2445,6 +2445,16 @@ var mcpServer = class extends ExtensionCommon.ExtensionAPI {
               catch { return dt.icalString || null; }
             }
 
+            function formatAttendee(att) {
+              if (!att) return null;
+              return {
+                id: att.id || "",
+                commonName: att.commonName || "",
+                participationStatus: att.participationStatus || "",
+                role: att.role || "",
+              };
+            }
+
             function formatEvent(item, calendar) {
               const allDay = item.startDate ? item.startDate.isDate : false;
               // For all-day events, iCal DTEND is exclusive. Convert to inclusive
@@ -2468,12 +2478,32 @@ var mcpServer = class extends ExtensionCommon.ExtensionAPI {
                 description: item.getProperty("DESCRIPTION") || "",
                 allDay,
                 isRecurring: !!item.recurrenceInfo,
+                // STATUS at VEVENT level — decided by the organizer. "CANCELLED"
+                // is what Thunderbird renders with a strikethrough. Distinct
+                // from myPartStat (decided by the attendee) below.
+                status: (item.status || item.getProperty("STATUS") || "") + "",
               };
               // Occurrences of recurring events share the parent's id.
               // Include recurrenceId so callers can distinguish them.
               if (item.recurrenceId) {
                 result.recurrenceId = calDateToISO(item.recurrenceId);
               }
+              // Organizer + attendees + my own participation status, so callers
+              // can filter out DECLINED invites (e.g. ghost events kept on the
+              // server but no longer attended).
+              try {
+                result.organizer = formatAttendee(item.organizer);
+              } catch { result.organizer = null; }
+              try {
+                const atts = typeof item.getAttendees === "function" ? item.getAttendees() : [];
+                result.attendees = (atts || []).map(formatAttendee).filter(Boolean);
+              } catch { result.attendees = []; }
+              try {
+                const me = cal.itip && typeof cal.itip.getInvitedAttendee === "function"
+                  ? cal.itip.getInvitedAttendee(item, calendar)
+                  : null;
+                result.myPartStat = me ? (me.participationStatus || "") : "";
+              } catch { result.myPartStat = ""; }
               return result;
             }
 
