@@ -2381,9 +2381,11 @@ var mcpServer = class extends ExtensionCommon.ExtensionAPI {
 
                 if (recurrence) {
                   try {
-                    const rinfo = cal.createRecurrenceInfo();
+                    const rinfo = Cc["@mozilla.org/calendar/recurrence-info;1"]
+                      .createInstance(Ci.calIRecurrenceInfo);
                     rinfo.item = event;
-                    const ritem = cal.createRecurrenceRule();
+                    const ritem = Cc["@mozilla.org/calendar/recurrence-rule;1"]
+                      .createInstance(Ci.calIRecurrenceRule);
                     const rstr = recurrence.startsWith("RRULE:") ? recurrence : ("RRULE:" + recurrence);
                     ritem.icalString = rstr;
                     rinfo.appendRecurrenceItem(ritem);
@@ -2783,9 +2785,11 @@ var mcpServer = class extends ExtensionCommon.ExtensionAPI {
                     if (recurrence === "" || recurrence === null) {
                       newItem.recurrenceInfo = null;
                     } else {
-                      const rinfo = cal.createRecurrenceInfo();
+                      const rinfo = Cc["@mozilla.org/calendar/recurrence-info;1"]
+                        .createInstance(Ci.calIRecurrenceInfo);
                       rinfo.item = newItem;
-                      const ritem = cal.createRecurrenceRule();
+                      const ritem = Cc["@mozilla.org/calendar/recurrence-rule;1"]
+                        .createInstance(Ci.calIRecurrenceRule);
                       const rstr = recurrence.startsWith("RRULE:") ? recurrence : ("RRULE:" + recurrence);
                       ritem.icalString = rstr;
                       rinfo.appendRecurrenceItem(ritem);
